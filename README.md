@@ -1,33 +1,26 @@
 # THE GOLF TRIP APP
 
-This package includes the full working UI.
+A deployable Next.js app for your golf trip.
 
 ## Run locally
-1. Install Node.js 18 or later.
-2. In this folder, run:
-
+```bash
 npm install
 npm run dev
+```
 
-3. Open http://localhost:3000
-
-## Make it live with Vercel
-1. Create a new GitHub repository.
-2. Upload the contents of this folder to the repo.
-3. Go to Vercel and import the GitHub repo.
-4. Click Deploy.
-5. Share the live URL with your group.
+## Deploy on Vercel
+1. Create a new GitHub repo
+2. Upload the contents of this folder
+3. Go to Vercel and import the repo
+4. Click Deploy
 
 ## Notes
-- Admin/View mode is currently a front-end toggle.
-- Data is stored in the browser state only.
-- If you want real multi-user live syncing, add Firebase or Supabase later.
-
-
-## Security patch note
-This package has been updated to use:
-- next: 14.2.33
-- react: 18.3.1
-- react-dom: 18.3.1
-
-If Vercel cached an older install, trigger a fresh deploy after pushing the updated files.
+- The app includes:
+  - team scoreboard
+  - race-to-17 heat meter
+  - admin/view-only mode
+  - results by day
+  - Thursday fixed Shields vs Swords team match
+  - Friday Pods A-D
+  - Saturday 4 morning matchups and 2 afternoon matchups
+  - schedules, rules, and editable handicaps

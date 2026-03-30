@@ -1,0 +1,616 @@
+
+import { useMemo, useState } from "react";
+
+const players = ["Rahim", "Allan", "Silva", "Travis", "Geraud", "Luke", "Sean", "Marco", "TBD"];
+
+const schedule = [
+  {
+    day: "Wednesday · May 20",
+    title: "Arrival Day",
+    items: [
+      { time: "1:30–2:00 PM", title: "Practice Round", detail: "SBCC Members Course" },
+      { time: "Evening", title: "Dinner at the Club House", detail: "Casual, but dress appropriately for a club house" },
+    ],
+  },
+  {
+    day: "Thursday · May 21",
+    title: "Match Play Day",
+    items: [
+      { time: "Morning (TBD)", title: "1v1 Net — 4 points", detail: "PGA Frisco Fields Ranch East" },
+      { time: "Transport", title: "Pickup / Uber", detail: "Rahim will pick up some people, others may need to Uber from Westin" },
+      { time: "Afternoon (TBD)", title: "Shields vs Swords — 1 point", detail: "The Swing · 4v4 Scramble" },
+      { time: "Dinner", title: "Ice House at PGA Frisco", detail: "Casual" },
+    ],
+  },
+  {
+    day: "Friday · May 22",
+    title: "Stroke Play Day",
+    items: [
+      { time: "5:30 AM", title: "Gym + Locker Rooms Open", detail: "Stretch out, cold plunge, sauna" },
+      { time: "7:30 AM", title: "Course + Range Open", detail: "SBCC" },
+      { time: "9:00–9:10 AM", title: "2v2 Best Ball Net — 2 points", detail: "SBCC Members Course" },
+      { time: "2:20–2:30 PM", title: "Friday Pods A–D — 2 points", detail: "SBCC Fazio · 2v2v2v2 Scramble Gross" },
+      { time: "7:00 PM", title: "Dinner at La Hacienda Ranch", detail: "Go straight from course · very casual · amazing Mexican food" },
+    ],
+  },
+  {
+    day: "Saturday · May 23",
+    title: "Final Play Day",
+    items: [
+      { time: "5:30 AM", title: "Gym + Locker Rooms Open", detail: "Stretch out, cold plunge, sauna" },
+      { time: "7:30–8:30 AM", title: "Stretch Coach", detail: "Tip if you use him · limit to 10 minutes" },
+      { time: "9:00–9:10 AM", title: "Morning Matches 1–4 — 4 points", detail: "SBCC Fazio · 1v1 Net" },
+      { time: "2:20–2:30 PM", title: "Afternoon Matches 1–2 — 4 points", detail: "SBCC Members Course · 2v2 Split Format" },
+      { time: "Dinner", title: "Dinner at the Club House", detail: "Closing night" },
+    ],
+  },
+];
+
+const rules = [
+  {
+    title: "General Rules",
+    bullets: [
+      "Team Shields vs Team Swords",
+      "17 points up for grabs — first team to 9 wins overall",
+      "Closest to the pin each morning on the shortest par 3; only counts if you are on the green",
+      "Morning scores determine overall individual net winner",
+      "Write gross scores; net is calculated after",
+      "No throwing on greens",
+      "Mulligan can be used anywhere but the greens, and not on throws",
+    ],
+  },
+  {
+    title: "Thursday Morning · 1v1 Net Match Play",
+    bullets: [
+      "Match play rules apply; no rollovers; tied net score halves the hole",
+      "Max double par net, then pick up",
+      "All OB / penalty areas are 1 stroke",
+      "Gimme is up to opponent or within putter grip",
+      "Each player gets 1 breakfast ball, 1 mulligan per nine, 1 throw per round",
+      "Everyone plays IV tees except Sean from III",
+      "Walking course — wear comfortable shoes and hydrate",
+      "Caddie tip: 40 to 60 dollars per bag",
+    ],
+  },
+  {
+    title: "Thursday Afternoon · Shields vs Swords",
+    bullets: ["Classic scramble rules", "1 throw per team"],
+  },
+  {
+    title: "Friday Morning · 2v2 Best Ball Net",
+    bullets: [
+      "Stroke play rules apply",
+      "Max double par net, then pick up",
+      "All OB / penalty areas are 1 stroke",
+      "Best ball rules apply — team takes the better net score",
+      "Each player gets 1 breakfast ball, 1 mulligan per nine, 1 throw per round",
+      "Each player must contribute 8 holes; team decides after each hole which score to take",
+      "Everyone plays White tees except Sean from Blue",
+      "Caddie tip: 40 dollars per bag",
+    ],
+  },
+  {
+    title: "Friday Afternoon · Pods A–D",
+    bullets: [
+      "Stroke play rules apply",
+      "Max double par, then pick up",
+      "Scramble rules apply — pick best shot until holed",
+      "Each team gets 1 mulligan per nine and 1 throw per round",
+      "Everyone plays White tees except Sean from Black",
+      "Top team earns 1 point; second and third earn 0.5",
+    ],
+  },
+  {
+    title: "Saturday Morning · Matchups 1–4",
+    bullets: [
+      "Stroke play rules apply",
+      "Max double par net, then pick up",
+      "All OB / penalty areas are 1 stroke",
+      "Gimme is up to opponent or within putter grip",
+      "Each player gets 1 breakfast ball, 1 mulligan per nine, 1 throw per round",
+      "Everyone plays White tees except Sean from Blue",
+      "Caddie tip: 40 dollars per bag",
+    ],
+  },
+  {
+    title: "Saturday Afternoon · Matches 1–2",
+    bullets: [
+      "Front 9: Modified Alternate Shot Net using 35% / 25%",
+      "Both players hit drives, choose the better drive, then the other player hits next",
+      "Front 9: each team gets 1 mulligan and 1 throw",
+      "Back 9: Scramble Net using 35% / 25%",
+      "Back 9: each team gets 1 mulligan and 1 throw",
+      "Everyone plays White tees except Sean from Black",
+    ],
+  },
+];
+
+const initialHandicaps = {
+  "Thursday": [
+    { name: "Geraud", value: "11" }, { name: "Sean", value: "3" }, { name: "Luke", value: "6" }, { name: "Silva", value: "16" },
+    { name: "Marco", value: "17" }, { name: "Travis", value: "16" }, { name: "Allan", value: "13" }, { name: "Rahim", value: "17" },
+  ],
+  "Friday": [
+    { name: "Geraud", value: "15" }, { name: "Sean", value: "5" }, { name: "Luke", value: "11" }, { name: "Silva", value: "20" },
+    { name: "Marco", value: "21" }, { name: "Travis", value: "20" }, { name: "Allan", value: "17" }, { name: "Rahim", value: "21" },
+  ],
+  "Saturday Morning (Fazio)": [
+    { name: "Geraud", value: "14" }, { name: "Sean", value: "4" }, { name: "Luke", value: "10" }, { name: "Silva", value: "19" },
+    { name: "Marco", value: "20" }, { name: "Travis", value: "19" }, { name: "Allan", value: "16" }, { name: "Rahim", value: "20" },
+  ],
+  "Saturday Afternoon (SBCC Members)": [
+    { name: "Geraud", value: "15" }, { name: "Sean", value: "5" }, { name: "Luke", value: "11" }, { name: "Silva", value: "20" },
+    { name: "Marco", value: "21" }, { name: "Travis", value: "20" }, { name: "Allan", value: "17" }, { name: "Rahim", value: "21" },
+  ],
+};
+
+const initialMatches = [
+  { id: 1, day: "Thursday", label: "Match 1", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "Rahim", sideAPlayer2: "", sideBPlayer1: "Geraud", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 2, day: "Thursday", label: "Match 2", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "Allan", sideAPlayer2: "", sideBPlayer1: "Sean", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 3, day: "Thursday", label: "Match 3", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "Silva", sideAPlayer2: "", sideBPlayer1: "Luke", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 4, day: "Thursday", label: "Match 4", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "Travis", sideAPlayer2: "", sideBPlayer1: "Marco", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 5, day: "Thursday", label: "Team Match", format: "4v4 Scramble", isTeam: false, fixedTeams: true, sideAPlayer1: "Shields", sideAPlayer2: "", sideBPlayer1: "Swords", sideBPlayer2: "", gross: "", net: "", points: "" },
+
+  { id: 6, day: "Friday", label: "Morning Match 1", format: "2v2 Best Ball Net", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+  { id: 7, day: "Friday", label: "Morning Match 2", format: "2v2 Best Ball Net", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+  { id: 8, day: "Friday", label: "Pod A", format: "Friday Afternoon Pod", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+  { id: 9, day: "Friday", label: "Pod B", format: "Friday Afternoon Pod", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+  { id: 10, day: "Friday", label: "Pod C", format: "Friday Afternoon Pod", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+  { id: 11, day: "Friday", label: "Pod D", format: "Friday Afternoon Pod", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+
+  { id: 12, day: "Saturday", label: "Morning Match 1", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "", sideBPlayer1: "TBD", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 13, day: "Saturday", label: "Morning Match 2", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "", sideBPlayer1: "TBD", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 14, day: "Saturday", label: "Morning Match 3", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "", sideBPlayer1: "TBD", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 15, day: "Saturday", label: "Morning Match 4", format: "1v1 Net", isTeam: false, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "", sideBPlayer1: "TBD", sideBPlayer2: "", gross: "", net: "", points: "" },
+  { id: 16, day: "Saturday", label: "Afternoon Match 1", format: "2v2 Split Format", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+  { id: 17, day: "Saturday", label: "Afternoon Match 2", format: "2v2 Split Format", isTeam: true, fixedTeams: false, sideAPlayer1: "TBD", sideAPlayer2: "TBD", sideBPlayer1: "TBD", sideBPlayer2: "TBD", gross: "", net: "", points: "" },
+];
+
+function Pill({ children }) {
+  return <span className="pill">{children}</span>;
+}
+
+function TabButton({ active, onClick, children }) {
+  return (
+    <button className={active ? "tab active" : "tab"} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+function PlayerSelect({ value, onChange, adminMode }) {
+  if (!adminMode) return <div className="readonlyBox">{value || "—"}</div>;
+  return (
+    <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+      {players.map((p) => <option key={p} value={p}>{p}</option>)}
+    </select>
+  );
+}
+
+function MatchCard({ match, adminMode, updateMatch }) {
+  return (
+    <div className="card soft">
+      <div className="row spread gap">
+        <div>
+          <div className="matchTitle">{match.label}</div>
+          <div className="muted">{match.format}</div>
+        </div>
+        <span className="miniBadge">Final</span>
+      </div>
+
+      <div className="grid2">
+        <div className="subcard">
+          <div className="label">Side A</div>
+          {match.fixedTeams ? (
+            <div className="readonlyBox strong">Shields</div>
+          ) : (
+            <>
+              <PlayerSelect adminMode={adminMode} value={match.sideAPlayer1} onChange={(v) => updateMatch(match.id, "sideAPlayer1", v)} />
+              {match.isTeam ? <PlayerSelect adminMode={adminMode} value={match.sideAPlayer2} onChange={(v) => updateMatch(match.id, "sideAPlayer2", v)} /> : null}
+            </>
+          )}
+        </div>
+        <div className="subcard">
+          <div className="label">Side B</div>
+          {match.fixedTeams ? (
+            <div className="readonlyBox strong">Swords</div>
+          ) : (
+            <>
+              <PlayerSelect adminMode={adminMode} value={match.sideBPlayer1} onChange={(v) => updateMatch(match.id, "sideBPlayer1", v)} />
+              {match.isTeam ? <PlayerSelect adminMode={adminMode} value={match.sideBPlayer2} onChange={(v) => updateMatch(match.id, "sideBPlayer2", v)} /> : null}
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid3">
+        <div>
+          <div className="label">Final Gross</div>
+          {adminMode ? (
+            <input className="input" value={match.gross} onChange={(e) => updateMatch(match.id, "gross", e.target.value)} placeholder="e.g. 72 / 74" />
+          ) : (
+            <div className="readonlyBox">{match.gross || "—"}</div>
+          )}
+        </div>
+        <div>
+          <div className="label">Final Net</div>
+          {adminMode ? (
+            <input className="input" value={match.net} onChange={(e) => updateMatch(match.id, "net", e.target.value)} placeholder="e.g. 67 / 69" />
+          ) : (
+            <div className="readonlyBox">{match.net || "—"}</div>
+          )}
+        </div>
+        <div>
+          <div className="label">Team Points</div>
+          {adminMode ? (
+            <input className="input" value={match.points} onChange={(e) => updateMatch(match.id, "points", e.target.value)} placeholder="e.g. Shields 1" />
+          ) : (
+            <div className="readonlyBox">{match.points || "—"}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const [tab, setTab] = useState("results");
+  const [adminMode, setAdminMode] = useState(true);
+  const [teamScore, setTeamScore] = useState({ shields: 6, swords: 5 });
+  const [streakTeam, setStreakTeam] = useState("shields");
+  const [streakCount, setStreakCount] = useState(3);
+  const [matches, setMatches] = useState(initialMatches);
+  const [handicaps, setHandicaps] = useState(initialHandicaps);
+  const [openRules, setOpenRules] = useState(null);
+
+  const matchesByDay = useMemo(() => {
+    return matches.reduce((acc, m) => {
+      if (!acc[m.day]) acc[m.day] = [];
+      acc[m.day].push(m);
+      return acc;
+    }, {});
+  }, [matches]);
+
+  const totalScored = teamScore.shields + teamScore.swords;
+  const remaining = Math.max(0, 17 - totalScored);
+  const leader = teamScore.shields === teamScore.swords ? "All Square" : teamScore.shields > teamScore.swords ? "Shields lead" : "Swords lead";
+  const heaterOn = streakCount >= 3;
+
+  function updateMatch(id, field, value) {
+    setMatches((prev) => prev.map((m) => m.id === id ? { ...m, [field]: value } : m));
+  }
+
+  function updateHandicap(section, name, value) {
+    setHandicaps((prev) => ({
+      ...prev,
+      [section]: prev[section].map((r) => r.name === name ? { ...r, value } : r)
+    }));
+  }
+
+  function ScoreBox({ teamKey, label, value }) {
+    return (
+      <div className="card soft center">
+        <div className="muted">{label}</div>
+        <div className="bigScore">{value}</div>
+        {adminMode ? (
+          <div className="row center gap">
+            <button className="circleBtn ghost" onClick={() => setTeamScore((s) => ({ ...s, [teamKey]: Math.max(0, s[teamKey] - 1) }))}>-</button>
+            <button className="circleBtn" onClick={() => setTeamScore((s) => ({ ...s, [teamKey]: s[teamKey] + 1 }))}>+</button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div className="container">
+        <div className="hero">
+          <img src="/logo-main.png" alt="The Golf Trip logo" className="heroLogo" />
+          <h1>THE GOLF TRIP APP</h1>
+          <h2>Shields v Swords</h2>
+          <img src="/logo-badge.png" alt="Trip badge" className="badgeLogo" />
+
+          <div className="row wrap center gap topPad">
+            <Pill>May 20–23, 2026</Pill>
+            <Pill>Frisco + SBCC</Pill>
+            <Pill>Trip HQ</Pill>
+          </div>
+
+          <div className="row center gap topPad">
+            <span className="modePill">{adminMode ? "Admin Edit Mode" : "View Only Mode"}</span>
+            <button className="secondaryBtn" onClick={() => setAdminMode((v) => !v)}>
+              {adminMode ? "Switch to View Only" : "Switch to Admin Edit"}
+            </button>
+          </div>
+        </div>
+
+        <div className="heroGrid">
+          <div className="card">
+            <div className="sectionTitle">Overall Team Scoring</div>
+            <div className="grid2">
+              <ScoreBox teamKey="shields" label="Shields" value={teamScore.shields} />
+              <ScoreBox teamKey="swords" label="Swords" value={teamScore.swords} />
+            </div>
+
+            <div className="heatWrap">
+              <div className="row spread muted small">
+                <span>Shields</span>
+                <span className="targetPill">17</span>
+                <span>Swords</span>
+              </div>
+              <div className="heatBar">
+                <div className={heaterOn && streakTeam === "shields" ? "fillLeft heater" : "fillLeft"} style={{ width: `${Math.min((teamScore.shields / 17) * 50, 50)}%` }} />
+                <div className={heaterOn && streakTeam === "swords" ? "fillRight heater" : "fillRight"} style={{ width: `${Math.min((teamScore.swords / 17) * 50, 50)}%` }} />
+                <div className="midLine"></div>
+                <div className="midText">17</div>
+              </div>
+              <div className="heaterText">{heaterOn ? `${streakTeam === "shields" ? "Shields" : "Swords"} are on a ${streakCount}-point heater` : "No heater active"}</div>
+            </div>
+
+            <div className="grid3 statGrid">
+              <div><div className="label">Status</div><div className="statValue">{leader}</div></div>
+              <div><div className="label">Points scored</div><div className="statValue">{totalScored}</div></div>
+              <div><div className="label">Points left</div><div className="statValue">{remaining}</div></div>
+            </div>
+
+            <div className="grid2">
+              <div>
+                <div className="label">Heater team</div>
+                <div className="row gap">
+                  <button className={streakTeam === "shields" ? "primaryBtn" : "secondaryBtn"} disabled={!adminMode} onClick={() => setStreakTeam("shields")}>Shields</button>
+                  <button className={streakTeam === "swords" ? "primaryBtn" : "secondaryBtn"} disabled={!adminMode} onClick={() => setStreakTeam("swords")}>Swords</button>
+                </div>
+              </div>
+              <div>
+                <div className="label">Heater streak</div>
+                <div className="row gap">
+                  {adminMode ? <button className="circleBtn ghost" onClick={() => setStreakCount((s) => Math.max(0, s - 1))}>-</button> : null}
+                  <div className="streakValue">{streakCount}</div>
+                  {adminMode ? <button className="circleBtn" onClick={() => setStreakCount((s) => s + 1)}>+</button> : null}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="sideCol">
+            <div className="card">
+              <div className="sectionTitle">Teams</div>
+              <div className="card soft">
+                <div className="matchTitle">Shields</div>
+                <div className="chips">{["Allan", "Rahim", "Silva", "Travis"].map((p) => <span key={p} className="chip">{p}</span>)}</div>
+              </div>
+              <div className="card soft">
+                <div className="matchTitle">Swords</div>
+                <div className="chips">{["Geraud", "Luke", "Sean", "Marco"].map((p) => <span key={p} className="chip">{p}</span>)}</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="sectionTitle">Quick Notes</div>
+              <div className="note">Thursday transport: Rahim will pick up some people; others may Uber from Westin.</div>
+              <div className="note">Closest to the pin each morning on the shortest par 3. Must be on the green.</div>
+              <div className="note">Enter final Gross, Net, and Team Points for each matchup. No individual live hole scoring needed.</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="tabs">
+          <TabButton active={tab === "results"} onClick={() => setTab("results")}>Results</TabButton>
+          <TabButton active={tab === "schedule"} onClick={() => setTab("schedule")}>Schedule</TabButton>
+          <TabButton active={tab === "rules"} onClick={() => setTab("rules")}>Rules</TabButton>
+          <TabButton active={tab === "handicaps"} onClick={() => setTab("handicaps")}>Handicaps</TabButton>
+        </div>
+
+        {tab === "results" ? (
+          <div className="stack">
+            {Object.entries(matchesByDay).map(([day, dayMatches]) => (
+              <div key={day} className="card">
+                <div className="sectionTitle">{day} Results</div>
+                <div className="muted">Set the matchup, then enter Final Gross, Final Net, and Team Points.</div>
+                <div className="stack topPad">
+                  {dayMatches.map((m) => (
+                    <MatchCard key={m.id} match={m} adminMode={adminMode} updateMatch={updateMatch} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {tab === "schedule" ? (
+          <div className="grid2 topPad">
+            {schedule.map((day) => (
+              <div className="card" key={day.day}>
+                <div className="sectionTitle">{day.title}</div>
+                <div className="muted">{day.day}</div>
+                <div className="stack topPad">
+                  {day.items.map((item) => (
+                    <div className="card soft" key={day.day + item.time + item.title}>
+                      <div className="label">{item.time}</div>
+                      <div className="matchTitle">{item.title}</div>
+                      <div className="muted">{item.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {tab === "rules" ? (
+          <div className="card topPad">
+            <div className="sectionTitle">Rules Center</div>
+            <div className="muted">Organized by format so nobody has to dig through the PDF on the course.</div>
+            <div className="stack topPad">
+              {rules.map((section, idx) => (
+                <div key={section.title} className="accordionItem">
+                  <button className="accordionBtn" onClick={() => setOpenRules(openRules === idx ? null : idx)}>
+                    <span>{section.title}</span>
+                    <span>{openRules === idx ? "−" : "+"}</span>
+                  </button>
+                  {openRules === idx ? (
+                    <div className="stack topPadSm">
+                      {section.bullets.map((b) => <div key={b} className="rulePill">{b}</div>)}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {tab === "handicaps" ? (
+          <div className="grid2 topPad">
+            {Object.entries(handicaps).map(([section, rows]) => (
+              <div className="card" key={section}>
+                <div className="sectionTitle">{section}</div>
+                <div className="stack topPad">
+                  {rows.map((row) => (
+                    <div className="handicapRow" key={section + row.name}>
+                      <div className="nameCell">{row.name}</div>
+                      {adminMode ? (
+                        <input className="input" value={row.value} onChange={(e) => updateHandicap(section, row.name, e.target.value)} />
+                      ) : (
+                        <div className="readonlyBox centered">{row.value || "—"}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      <style jsx>{`
+        :global(body) {
+          margin: 0;
+          font-family: Inter, Arial, sans-serif;
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+        .page { min-height: 100vh; padding: 24px 0 40px; }
+        .container { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+        .hero {
+          background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+          color: white;
+          border-radius: 28px;
+          padding: 28px;
+          text-align: center;
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+        }
+        .heroLogo { height: 96px; width: auto; object-fit: contain; margin-bottom: 12px; }
+        .badgeLogo { height: 60px; width: auto; object-fit: contain; margin-top: 14px; }
+        h1 { margin: 0; font-size: clamp(32px, 5vw, 56px); line-height: 1.05; }
+        h2 { margin: 10px 0 0; font-size: clamp(20px, 2.5vw, 28px); color: #cbd5e1; }
+        .heroGrid { display: grid; gap: 24px; grid-template-columns: 1.15fr 0.85fr; margin-top: 24px; }
+        .sideCol { display: grid; gap: 24px; }
+        .card {
+          background: white;
+          border-radius: 28px;
+          padding: 22px;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        .soft { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 22px; box-shadow: none; padding: 16px; }
+        .sectionTitle { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+        .row { display: flex; align-items: center; }
+        .spread { justify-content: space-between; }
+        .center { justify-content: center; text-align: center; }
+        .wrap { flex-wrap: wrap; }
+        .gap { gap: 10px; }
+        .topPad { margin-top: 16px; }
+        .topPadSm { margin-top: 10px; }
+        .muted { color: #64748b; }
+        .small { font-size: 12px; }
+        .bigScore { font-size: 52px; font-weight: 900; line-height: 1; margin: 6px 0 12px; }
+        .pill, .modePill, .miniBadge, .chip, .targetPill {
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 999px; padding: 8px 12px; font-size: 14px;
+        }
+        .pill { border: 1px solid rgba(255,255,255,.12); color: #e2e8f0; }
+        .modePill { background: rgba(255,255,255,.12); color: white; }
+        .miniBadge { border: 1px solid #cbd5e1; color: #475569; background: white; font-size: 12px; }
+        .chip { background: white; border: 1px solid #e2e8f0; margin: 4px 6px 0 0; }
+        .targetPill { background: #0f172a; color: white; padding: 6px 12px; font-weight: 700; }
+        .primaryBtn, .secondaryBtn, .circleBtn, .tab, .accordionBtn {
+          cursor: pointer; border: none; font: inherit;
+        }
+        .primaryBtn {
+          background: #0f172a; color: white; padding: 10px 14px; border-radius: 999px;
+        }
+        .secondaryBtn {
+          background: white; color: #0f172a; padding: 10px 14px; border-radius: 999px; border: 1px solid #cbd5e1;
+        }
+        .circleBtn {
+          width: 40px; height: 40px; border-radius: 999px; background: #0f172a; color: white; font-size: 22px; line-height: 1;
+        }
+        .circleBtn.ghost {
+          background: white; color: #0f172a; border: 1px solid #cbd5e1;
+        }
+        .tabs {
+          display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px;
+          background: white; padding: 10px; border-radius: 24px; margin-top: 24px;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        .tab {
+          padding: 12px 14px; border-radius: 18px; background: #f8fafc; color: #0f172a;
+        }
+        .tab.active { background: #0f172a; color: white; }
+        .stack { display: grid; gap: 16px; }
+        .grid2 { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0,1fr)); margin-top: 16px; }
+        .grid3 { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 16px; }
+        .statGrid { background: #f8fafc; border-radius: 18px; padding: 16px; }
+        .statValue { font-size: 22px; font-weight: 800; }
+        .streakValue { font-size: 30px; font-weight: 900; min-width: 36px; text-align: center; }
+        .heatWrap { margin-top: 16px; }
+        .heatBar {
+          position: relative; height: 24px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 8px;
+        }
+        .fillLeft, .fillRight { position: absolute; top: 0; bottom: 0; }
+        .fillLeft { left: 0; background: #2563eb; }
+        .fillRight { right: 0; background: #f59e0b; }
+        .heater { background: #f97316 !important; }
+        .midLine {
+          position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; transform: translateX(-50%); background: white;
+        }
+        .midText {
+          position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+          font-size: 10px; font-weight: 900; color: #334155;
+        }
+        .heaterText { text-align: center; color: #475569; font-size: 14px; font-weight: 600; margin-top: 10px; }
+        .label { color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px; }
+        .matchTitle { font-size: 20px; font-weight: 800; }
+        .subcard { background: white; border-radius: 16px; padding: 14px; }
+        .input {
+          width: 100%; border: 1px solid #cbd5e1; background: white; border-radius: 12px;
+          padding: 10px 12px; font: inherit; box-sizing: border-box; margin-top: 6px;
+        }
+        .readonlyBox {
+          width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; background: #f8fafc;
+          border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-top: 6px;
+        }
+        .readonlyBox.strong { font-weight: 800; }
+        .readonlyBox.centered { text-align: center; }
+        .chips { margin-top: 6px; }
+        .note { background: #f8fafc; border-radius: 18px; padding: 14px; color: #334155; }
+        .accordionItem { border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; }
+        .accordionBtn {
+          width: 100%; display: flex; align-items: center; justify-content: space-between; background: transparent; color: #0f172a;
+          font-weight: 700; padding: 0;
+        }
+        .rulePill { background: #f8fafc; border-radius: 14px; padding: 10px 12px; color: #334155; }
+        .handicapRow {
+          display: grid; grid-template-columns: 1fr 120px; gap: 12px; align-items: center;
+          background: #f8fafc; border-radius: 14px; padding: 12px;
+        }
+        .nameCell { font-weight: 600; color: #334155; }
+
+        @media (max-width: 960px) {
+          .heroGrid, .grid2, .grid3 { grid-template-columns: 1fr; }
+          .tabs { grid-template-columns: 1fr 1fr; }
+        }
+      `}</style>
+    </div>
+  );
+}
