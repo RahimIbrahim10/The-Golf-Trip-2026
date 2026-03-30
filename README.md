@@ -22,3 +22,12 @@ npm run dev
 - Admin/View mode is currently a front-end toggle.
 - Data is stored in the browser state only.
 - If you want real multi-user live syncing, add Firebase or Supabase later.
+
+
+## Security patch note
+This package has been updated to use:
+- next: 14.2.33
+- react: 18.3.1
+- react-dom: 18.3.1
+
+If Vercel cached an older install, trigger a fresh deploy after pushing the updated files.
